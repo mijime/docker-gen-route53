@@ -4,10 +4,13 @@ MAINTAINER Jason Wilder jwilder@litl.com
 # Install wget and install/updates certificates
 RUN apt-get update \
  && apt-get install -y -q --no-install-recommends \
+    python-pip \
     ca-certificates \
     wget \
  && apt-get clean \
  && rm -r /var/lib/apt/lists/*
+
+RUN pip install awscli
 
 # Configure Nginx and apply fix for very long server names
 RUN echo "daemon off;" >> /etc/nginx/nginx.conf \

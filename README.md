@@ -1,24 +1,26 @@
 ![nginx 1.9.0](https://img.shields.io/badge/nginx-1.9.0-brightgreen.svg) ![License MIT](https://img.shields.io/badge/license-MIT-blue.svg)
 
-nginx-proxy sets up a container running nginx and [docker-gen][1].  docker-gen generates reverse proxy configs for nginx and reloads nginx when containers are started and stopped.
+nginx-proxy-r53 sets up a container running nginx and [docker-gen][1].  docker-gen generates reverse proxy configs for nginx and reloads nginx when containers are started and stopped.
 
-See [Automated Nginx Reverse Proxy for Docker][2] for why you might want to use this.
+it also registers the hostname in route53 (AWS DNS service)   
+
+fork of https://github.com/jwilder/nginx-proxy + the route53 functionality 
 
 ### Usage
 
 To run it:
 
-    $ docker run -d -p 80:80 -v /var/run/docker.sock:/tmp/docker.sock jwilder/nginx-proxy
+    $ docker run -d -p 80:80 -e SELF_HOST=<dns for this host> -e HOST_ZONE_ID=<key> -e AWS_ACCESS_KEY_ID=<key> -e AWS_SECRET_ACCESS_KEY=<secret> -e AWS_DEFAULT_REGION=<region> -v /var/run/docker.sock:/tmp/docker.sock tmuskal/nginx-proxy-r53
 
 Then start any containers you want proxied with an env var `VIRTUAL_HOST=subdomain.youdomain.com`
 
     $ docker run -e VIRTUAL_HOST=foo.bar.com  ...
 
-Provided your DNS is setup to forward foo.bar.com to the a host running nginx-proxy, the request will be routed to a container with the VIRTUAL_HOST env var set.
+Provided your DNS is setup to forward foo.bar.com to the a host running nginx-proxy-r53, the request will be routed to a container with the VIRTUAL_HOST env var set.
 
 ### Multiple Ports
 
-If your container exposes multiple ports, nginx-proxy will default to the service running on port 80.  If you need to specify a different port, you can set a VIRTUAL_PORT env var to select a different one.  If your container only exposes one port and it has a VIRTUAL_HOST env var set, that port will be selected.
+If your container exposes multiple ports, nginx-proxy-r53 will default to the service running on port 80.  If you need to specify a different port, you can set a VIRTUAL_PORT env var to select a different one.  If your container only exposes one port and it has a VIRTUAL_HOST env var set, that port will be selected.
 
   [1]: https://github.com/jwilder/docker-gen
   [2]: http://jasonwilder.com/blog/2014/03/25/automated-nginx-reverse-proxy-for-docker/
@@ -26,10 +28,6 @@ If your container exposes multiple ports, nginx-proxy will default to the servic
 ### Multiple Hosts
 
 If you need to support multiple virtual hosts for a container, you can separate each entry with commas.  For example, `foo.bar.com,baz.bar.com,bar.com` and each host will be setup the same.
-
-### Wildcard Hosts
-
-You can also use wildcards at the beginning and the end of host name, like `*.bar.com` or `foo.bar.*`. Or even a regular expression, which can be very useful in conjunction with a wildcard DNS service like [xip.io](http://xip.io), using `~^foo\.bar\..*\.xip\.io` will match `foo.bar.127.0.0.1.xip.io`, `foo.bar.10.0.2.2.xip.io` and all other given IPs. More information about this topic can be found in the nginx documentation about [`server_names`](http://nginx.org/en/docs/http/server_names.html).
 
 ### SSL Backends
 
@@ -39,35 +37,7 @@ If you would like to connect to your backend using HTTPS instead of HTTP, set `V
 
 To set the default host for nginx use the env var `DEFAULT_HOST=foo.bar.com` for example
 
-    $ docker run -d -p 80:80 -e DEFAULT_HOST=foo.bar.com -v /var/run/docker.sock:/tmp/docker.sock jwilder/nginx-proxy
-
-
-### Separate Containers
-
-nginx-proxy can also be run as two separate containers using the [jwilder/docker-gen](https://index.docker.io/u/jwilder/docker-gen/)
-image and the official [nginx](https://registry.hub.docker.com/_/nginx/) image.
-
-You may want to do this to prevent having the docker socket bound to a publicly exposed container service.
-
-To run nginx proxy as a separate container you'll need to have [nginx.tmpl](https://github.com/jwilder/nginx-proxy/blob/master/nginx.tmpl) on your host system.
-
-First start nginx with a volume:
-
-
-    $ docker run -d -p 80:80 --name nginx -v /tmp/nginx:/etc/nginx/conf.d -t nginx
-
-Then start the docker-gen container with the shared volume and template:
-
-```
-$ docker run --volumes-from nginx \
-    -v /var/run/docker.sock:/tmp/docker.sock \
-    -v $(pwd):/etc/docker-gen/templates \
-    -t jwilder/docker-gen -notify-sighup nginx -watch -only-exposed /etc/docker-gen/templates/nginx.tmpl /etc/nginx/conf.d/default.conf
-```
-
-Finally, start your containers with `VIRTUAL_HOST` environment variables.
-
-    $ docker run -e VIRTUAL_HOST=foo.bar.com  ...
+    $ docker run -d -p 80:80 -e DEFAULT_HOST=foo.bar.com -v /var/run/docker.sock:/tmp/docker.sock tmuskal/nginx-proxy-r53
 
 ### SSL Support
 
@@ -76,7 +46,7 @@ certificates or optionally specifying a cert name (for SNI) as an environment va
 
 To enable SSL:
 
-    $ docker run -d -p 80:80 -p 443:443 -v /path/to/certs:/etc/nginx/certs -v /var/run/docker.sock:/tmp/docker.sock jwilder/nginx-proxy
+    $ docker run -d -p 80:80 -p 443:443 -v /path/to/certs:/etc/nginx/certs -v /var/run/docker.sock:/tmp/docker.sock tmuskal/nginx-proxy-r53
 
 The contents of `/path/to/certs` should contain the certificates and private keys for any virtual
 hosts in use.  The certificate and keys should be named after the virtual host with a `.crt` and
@@ -129,7 +99,7 @@ $ docker run -d -p 80:80 -p 443:443 \
     -v /path/to/htpasswd:/etc/nginx/htpasswd \
     -v /path/to/certs:/etc/nginx/certs \
     -v /var/run/docker.sock:/tmp/docker.sock \
-    jwilder/nginx-proxy
+    tmuskal/nginx-proxy-r53
 ```
 
 You'll need apache2-utils on the machine you plan to create de htpasswd file. Follow these [instructions](http://httpd.apache.org/docs/2.2/programs/htpasswd.html)
@@ -145,7 +115,7 @@ To add settings on a proxy-wide basis, add your configuration file under `/etc/n
 This can be done in a derived image by creating the file in a `RUN` command or by `COPY`ing the file into `conf.d`:
 
 ```Dockerfile
-FROM jwilder/nginx-proxy
+FROM tmuskal/nginx-proxy-r53
 RUN { \
       echo 'server_tokens off;'; \
       echo 'client_max_body_size 100m;'; \
@@ -154,7 +124,7 @@ RUN { \
 
 Or it can be done by mounting in your custom configuration in your `docker run` command:
 
-    $ docker run -d -p 80:80 -p 443:443 -v /path/to/my_proxy.conf:/etc/nginx/conf.d/my_proxy.conf:ro -v /var/run/docker.sock:/tmp/docker.sock jwilder/nginx-proxy
+    $ docker run -d -p 80:80 -p 443:443 -v /path/to/my_proxy.conf:/etc/nginx/conf.d/my_proxy.conf:ro -v /var/run/docker.sock:/tmp/docker.sock tmuskal/nginx-proxy-r53
 
 #### Per-VIRTUAL_HOST
 
@@ -164,7 +134,7 @@ In order to allow virtual hosts to be dynamically configured as backends are add
 
 For example, if you have a virtual host named `app.example.com`, you could provide a custom configuration for that host as follows:
 
-    $ docker run -d -p 80:80 -p 443:443 -v /path/to/vhost.d:/etc/nginx/vhost.d:ro -v /var/run/docker.sock:/tmp/docker.sock jwilder/nginx-proxy
+    $ docker run -d -p 80:80 -p 443:443 -v /path/to/vhost.d:/etc/nginx/vhost.d:ro -v /var/run/docker.sock:/tmp/docker.sock tmuskal/nginx-proxy-r53
     $ { echo 'server_tokens off;'; echo 'client_max_body_size 100m;'; } > /path/to/vhost.d/app.example.com
 
 If you are using multiple hostnames for a single container (e.g. `VIRTUAL_HOST=example.com,www.example.com`), the virtual host configuration file must exist for each hostname. If you would like to use the same configuration for multiple virtual host names, you can use a symlink:
