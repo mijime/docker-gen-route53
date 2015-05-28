@@ -1,9 +1,10 @@
 {
 "Changes": [
+{{ $idx := 0 }}
 {{ $data := groupByMulti $ "Env.VIRTUAL_HOST" "," }}
 {{ range $host, $containers := $data }}
 {{ range $container := $containers }}
-{{ if(ne (index $data 0 0) $host)  }},{{ end }}
+{{ if($idx)  }},{{ end }}
     {
         "Action": "UPSERT",
         "ResourceRecordSet": {
@@ -17,6 +18,7 @@
         ]
         }
     }
+{{ $idx := 1 }}
 {{ end }}
 {{ end }}
 ]
