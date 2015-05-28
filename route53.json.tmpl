@@ -15,8 +15,21 @@
         }
         ]
         }
+    },
+{{ end }}
+{{ end }}
+    {
+        "Action": "UPSERT",
+        "ResourceRecordSet": {
+        "Name": "theDummy",
+        "Type": "CNAME",
+        "TTL": 300,
+        "ResourceRecords": [
+        {
+        "Value": "{{$.Env.SELF_HOST}}"
+        }
+        ]
+        }
     }
-{{ end }}
-{{ end }}
 ]
 }
