@@ -3,7 +3,7 @@
 {{ $data := groupByMulti $ "Env.VIRTUAL_HOST" "," }}
 {{ range $host, $containers := $data }}
 {{ range $container := $containers }}
-{{ if(index data 0 0 != $host)  }},{{ end }}
+{{ if(index $data 0 0 != $host)  }},{{ end }}
     {
         "Action": "UPSERT",
         "ResourceRecordSet": {
