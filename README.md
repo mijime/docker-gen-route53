@@ -10,7 +10,7 @@ fork of https://github.com/jwilder/nginx-proxy + the route53 functionality
 
 To run it:
 
-    $ docker run -d -p 80:80 -e SELF_HOST=proxy.yourdomain.com -e HOST_ZONE_ID=zoneid HOST_ZONE_DOME=yourdomain.com -e AWS_ACCESS_KEY_ID=key -e AWS_SECRET_ACCESS_KEY=secret -e AWS_DEFAULT_REGION=us-east-1 -v /var/run/docker.sock:/tmp/docker.sock tmuskal/nginx-proxy-r53
+    $ docker run -d -p 80:80 -e SELF_HOST=proxy.yourdomain.com -e HOST_ZONE_ID=zoneid HOST_ZONE_DOMAIN=yourdomain.com -e AWS_ACCESS_KEY_ID=key -e AWS_SECRET_ACCESS_KEY=secret -e AWS_DEFAULT_REGION=us-east-1 -v /var/run/docker.sock:/tmp/docker.sock tmuskal/nginx-proxy-r53
 
 Then start any containers you want proxied with an env var `VIRTUAL_HOST=subdomain.yourdomain.com`
 
@@ -27,7 +27,7 @@ If your container exposes multiple ports, nginx-proxy-r53 will default to the se
 
 ### Multiple Hosts
 
-If you need to support multiple virtual hosts for a container, you can separate each entry with commas.  For example, `foo.bar.com,baz.bar.com,bar.com` and each host will be setup the same.
+If you need to support multiple virtual hosts for a container, you can separate each entry with commas.  For example, `foo.yourdomain.com,baz.yourdomain.com` and each host will be setup the same.
 
 ### SSL Backends
 
@@ -35,9 +35,9 @@ If you would like to connect to your backend using HTTPS instead of HTTP, set `V
 
 ### Default Host
 
-To set the default host for nginx use the env var `DEFAULT_HOST=foo.bar.com` for example
+To set the default host for nginx use the env var `DEFAULT_HOST=foo.yourdomain.com` for example
 
-    $ docker run -d -p 80:80 -e DEFAULT_HOST=foo.bar.com -v /var/run/docker.sock:/tmp/docker.sock tmuskal/nginx-proxy-r53
+    $ docker run -d -p 80:80 -e DEFAULT_HOST=foo.yourdomain.com -v /var/run/docker.sock:/tmp/docker.sock tmuskal/nginx-proxy-r53
 
 ### SSL Support
 
@@ -56,8 +56,8 @@ hosts in use.  The certificate and keys should be named after the virtual host w
 #### Diffie-Hellman Groups
 
 If you have Diffie-Hellman groups enabled, the files should be named after the virtual host with a
-`dhparam` suffix and `.pem` extension. For example, a container with `VIRTUAL_HOST=foo.bar.com`
-should have a `foo.bar.com.dhparam.pem` file in the certs directory.
+`dhparam` suffix and `.pem` extension. For example, a container with `VIRTUAL_HOST=foo.yourdomain.com`
+should have a `foo.yourdomain.com.dhparam.pem` file in the certs directory.
 
 #### Wildcard Certificates
 
