@@ -10,7 +10,7 @@ fork of https://github.com/jwilder/nginx-proxy + the route53 functionality
 
 To run it:
 
-    $ docker run -d -p 80:80 -e SELF_HOST=<dns for this host> -e HOST_ZONE_ID=<key> -e AWS_ACCESS_KEY_ID=<key> -e AWS_SECRET_ACCESS_KEY=<secret> -e AWS_DEFAULT_REGION=<region> -v /var/run/docker.sock:/tmp/docker.sock tmuskal/nginx-proxy-r53
+    $ docker run -d -p 80:80 -e SELF_HOST=<dns for this host> -e HOST_ZONE_ID=<key> HOST_ZONE_DOME=<domain> -e AWS_ACCESS_KEY_ID=<key> -e AWS_SECRET_ACCESS_KEY=<secret> -e AWS_DEFAULT_REGION=<region> -v /var/run/docker.sock:/tmp/docker.sock tmuskal/nginx-proxy-r53
 
 Then start any containers you want proxied with an env var `VIRTUAL_HOST=subdomain.youdomain.com`
 

@@ -21,7 +21,7 @@
     {
         "Action": "UPSERT",
         "ResourceRecordSet": {
-        "Name": "theDummy",
+        "Name": "dummy.{{$.Env.HOST_ZONE_DOME}}",
         "Type": "CNAME",
         "TTL": 300,
         "ResourceRecords": [
