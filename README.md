@@ -10,13 +10,13 @@ fork of https://github.com/jwilder/nginx-proxy + the route53 functionality
 
 To run it:
 
-    $ docker run -d -p 80:80 -e SELF_HOST=<dns for this host> -e HOST_ZONE_ID=<key> HOST_ZONE_DOME=<domain> -e AWS_ACCESS_KEY_ID=<key> -e AWS_SECRET_ACCESS_KEY=<secret> -e AWS_DEFAULT_REGION=<region> -v /var/run/docker.sock:/tmp/docker.sock tmuskal/nginx-proxy-r53
+    $ docker run -d -p 80:80 -e SELF_HOST=proxy.yourdomain.com -e HOST_ZONE_ID=zoneid HOST_ZONE_DOME=yourdomain.com -e AWS_ACCESS_KEY_ID=key -e AWS_SECRET_ACCESS_KEY=secret -e AWS_DEFAULT_REGION=us-east-1 -v /var/run/docker.sock:/tmp/docker.sock tmuskal/nginx-proxy-r53
 
-Then start any containers you want proxied with an env var `VIRTUAL_HOST=subdomain.youdomain.com`
+Then start any containers you want proxied with an env var `VIRTUAL_HOST=subdomain.yourdomain.com`
 
-    $ docker run -e VIRTUAL_HOST=foo.bar.com  ...
+    $ docker run -e VIRTUAL_HOST=subdomain.yourdomain.com  ...
 
-Provided your DNS is setup to forward foo.bar.com to the a host running nginx-proxy-r53, the request will be routed to a container with the VIRTUAL_HOST env var set.
+Provided your DNS is setup to forward proxy.yourdomain.com to the a host running nginx-proxy-r53, requests to subdomain.yourdomain.com will be routed to a container with the VIRTUAL_HOST env var set.
 
 ### Multiple Ports
 
