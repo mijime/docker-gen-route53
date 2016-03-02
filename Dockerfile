@@ -13,7 +13,7 @@ RUN apk add --update wget ca-certificates && \
 
 ENV DOCKER_HOST=unix:///tmp/docker.sock \
     HOST_ZONE_ID=<SET_YOUR_HOST_ZONE_ID> \
-    HOST_ZONE_DOMAIN=<SET_YOUR_HOST_ZONE_DOMAIN> \
+    HOST_ZONE_DOMAIN= \
     HOST_TYPE=CNAME \
     HOST_NAME=
 
