@@ -1,36 +1,24 @@
-FROM nginx:1.9.0
-MAINTAINER Jason Wilder jwilder@litl.com
+FROM python:alpine
 
-# Install wget and install/updates certificates
-RUN apt-get update \
- && apt-get install -y -q --no-install-recommends \
-    python-pip \
-    ca-certificates \
-    wget \
- && apt-get clean \
- && rm -r /var/lib/apt/lists/*
+RUN pip install --upgrade awscli
 
-RUN pip install awscli
+ENV DOCKER_GEN_VERSION=0.7.0 \
+    DOCKER_GEN_OS=alpine-linux-amd64
 
-# Configure Nginx and apply fix for very long server names
-RUN echo "daemon off;" >> /etc/nginx/nginx.conf \
- && sed -i 's/^http {/&\n    server_names_hash_bucket_size 128;/g' /etc/nginx/nginx.conf
+RUN apk add --update wget ca-certificates && \
+  wget https://github.com/jwilder/docker-gen/releases/download/${DOCKER_GEN_VERSION}/docker-gen-${DOCKER_GEN_OS}-${DOCKER_GEN_VERSION}.tar.gz \
+      && tar -C /usr/local/bin -xvzf docker-gen-${DOCKER_GEN_OS}-${DOCKER_GEN_VERSION}.tar.gz \
+      && rm /docker-gen-${DOCKER_GEN_OS}-${DOCKER_GEN_VERSION}.tar.gz \
+      && apk del --purge wget
 
-# Install Forego
-RUN wget -P /usr/local/bin https://godist.herokuapp.com/projects/ddollar/forego/releases/current/linux-amd64/forego \
- && chmod u+x /usr/local/bin/forego
+ENV DOCKER_HOST=unix:///tmp/docker.sock \
+    HOST_ZONE_ID=<SET_YOUR_HOST_ZONE_ID> \
+    HOST_ZONE_DOMAIN=<SET_YOUR_HOST_ZONE_DOMAIN> \
+    HOST_TYPE=CNAME \
+    HOST_NAME=
 
-ENV DOCKER_GEN_VERSION 0.3.9
+COPY route53.json.tmpl /etc/route53.json.tmpl
+COPY update-route53.sh /usr/local/bin/update-route53.sh
+RUN chmod +x /usr/local/bin/update-route53.sh
 
-RUN wget https://github.com/jwilder/docker-gen/releases/download/$DOCKER_GEN_VERSION/docker-gen-linux-amd64-$DOCKER_GEN_VERSION.tar.gz \
- && tar -C /usr/local/bin -xvzf docker-gen-linux-amd64-$DOCKER_GEN_VERSION.tar.gz \
- && rm /docker-gen-linux-amd64-$DOCKER_GEN_VERSION.tar.gz
-
-COPY . /app/
-WORKDIR /app/
-
-ENV DOCKER_HOST unix:///tmp/docker.sock
-
-VOLUME ["/etc/nginx/certs"]
-
-CMD ["forego", "start", "-r"]
+CMD ["docker-gen", "-watch", "-only-exposed", "-notify", "update-route53.sh", "/etc/route53.json.tmpl", "/etc/route53.json"]

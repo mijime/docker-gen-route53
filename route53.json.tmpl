@@ -1,35 +1,34 @@
-{
-"Changes": [
-{{ $data := groupByMulti $ "Env.VIRTUAL_HOST" "," }}
-{{ range $host, $containers := $data }}
-{{ range $container := $containers }}
-    {
-        "Action": "UPSERT",
-        "ResourceRecordSet": {
-        "Name": "{{$host}}",
-        "Type": "CNAME",
-        "TTL": 300,
-        "ResourceRecords": [
-        {
-        "Value": "{{$.Env.SELF_HOST}}"
-        }
-        ]
-        }
-    },
-{{ end }}
-{{ end }}
-    {
-        "Action": "UPSERT",
-        "ResourceRecordSet": {
-        "Name": "dummy.{{$.Env.HOST_ZONE_DOMAIN}}",
-        "Type": "CNAME",
-        "TTL": 300,
-        "ResourceRecords": [
-        {
-        "Value": "{{$.Env.SELF_HOST}}"
-        }
-        ]
-        }
+{ "Changes": [
+  {{ range $host, $containers := groupByMulti $ "Env.VIRTUAL_HOST" "," }}
+  { "Action": "UPSERT",
+    "ResourceRecordSet": {
+      "Name": "{{ $host }}",
+      "Type": "{{ $.Env.HOST_TYPE }}",
+      "TTL": 300,
+      "ResourceRecords": [{"Value": "{{ $.Env.HOST_NAME }}"}]
     }
-]
-}
+  },{{ end }}
+  {{ range $host, $containers := groupByMulti $ "Env.VIRTUAL_HOST_INTERNAL" "," }}
+  { "Action": "UPSERT",
+    "ResourceRecordSet": {
+      "Name": "{{ $host }}",
+      "Type": "A",
+      "TTL": 300,
+      "ResourceRecords": [
+      {{ range $cIndex, $container := $containers }}
+        {{ if eq $cIndex 0 }}{{ else }},{{ end }}
+        {{ $network := index $container.Networks 0 }}
+        {{ $ip := coalesce $container.Env.VIRTUAL_IP $network.IP }}
+        {"Value": "{{ $ip }}"}{{ end }}
+      ]
+    }
+  },{{ end }}
+  { "Action": "UPSERT",
+    "ResourceRecordSet": {
+      "Name": "dummy.{{ $.Env.HOST_ZONE_DOMAIN }}",
+      "Type": "{{ $.Env.HOST_TYPE }}",
+      "TTL": 300,
+      "ResourceRecords": [{"Value": "{{ $.Env.HOST_NAME }}"}]
+    }
+  }
+] }
