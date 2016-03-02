@@ -18,7 +18,12 @@ ENV DOCKER_HOST=unix:///tmp/docker.sock \
     HOST_NAME=
 
 COPY route53.json.tmpl /etc/route53.json.tmpl
+
 COPY update-route53.sh /usr/local/bin/update-route53.sh
 RUN chmod +x /usr/local/bin/update-route53.sh
 
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+ENTRYPOINT ["entrypoint.sh"]
 CMD ["docker-gen", "-watch", "-only-exposed", "-notify", "update-route53.sh", "/etc/route53.json.tmpl", "/etc/route53.json"]
